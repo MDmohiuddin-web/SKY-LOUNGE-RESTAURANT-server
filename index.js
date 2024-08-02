@@ -2,11 +2,11 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 require("dotenv").config();
-const port = process.env.PORT || 4050;
+const port = process.env.PORT || 9585;     
 
 // middleware
-
-app.use(cors());
+ 
+app.use(cors()); 
 app.use(express.json());
 
 // DATA BASE CONNECTION CODE
@@ -19,7 +19,7 @@ const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
-    deprecationErrors: true,
+    deprecationErrors: true,     
   },
 });
 
@@ -43,9 +43,17 @@ async function run() {
     });
 
     // cards collections
-    app.post("/cards", async (req, res) => {
-      const result = await CardCollection.insertOne(req.body); 
+    app.get("/cards", async (req, res) => {
+       
+      const result = await CardCollection.find().toArray();
+      res.send(result);
+       
+    });
+    
+    app.post("/cards", async (req, res) => {  
+      const result = await CardCollection.insertOne(req.body);   
       res.send(result);  
+    
     });
 
     // Send a ping to confirm a successful connection
@@ -70,7 +78,7 @@ app.listen(port, () => {
 
 /**
  * ----------------------
- * naming convention
+ * naming convention  
  * ----------------------
  * app.get('/user')
  * app.get('/user/:id')
