@@ -5,7 +5,7 @@ require("dotenv").config();
 const port = process.env.PORT || 9585;     
 
 // middleware
- 
+  
 app.use(cors()); 
 app.use(express.json());
 
@@ -19,7 +19,7 @@ const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
-    deprecationErrors: true,     
+    deprecationErrors: true,      
   },
 });
 
@@ -44,8 +44,9 @@ async function run() {
 
     // cards collections
     app.get("/cards", async (req, res) => {
-       
-      const result = await CardCollection.find().toArray();
+       const email = req.query.email;
+       const query = { email: email };
+      const result = await CardCollection.find(query).toArray();
       res.send(result);
        
     });
@@ -56,7 +57,7 @@ async function run() {
     
     });
 
-    // Send a ping to confirm a successful connection
+    // Send a ping to confirm a successful connection 
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
