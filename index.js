@@ -38,8 +38,20 @@ async function run() {
       res.send(result);
     });
 
+    // make admin api
+    app.put("/users/admin/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          role: "admin",
+        },
+      }
+      const result = await usersCollection.updateOne(filter, updateDoc)
+      res.send(result)
+    });
 
-    app.get('/users', async (req, res) => {
+    app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
@@ -49,32 +61,34 @@ async function run() {
       const user = req.body;
       //insert email if user does not exist
       //you can do this many ways (1:email unique, 2: upsert, 3: simple checking,)
-      const query = { email: user.email };
-      const existingUser = await usersCollection.findOne(query);
+      const filter = { email: user.email };
+      const existingUser = await usersCollection.findOne(filter);
       if (existingUser) {
-        return res.send({ message: "user already exists", insertedId: null }); 
+        return res.send({ message: "user already exists", insertedId: null });
       }
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
+    
+
     // users collections for delete users
     app.delete("/users/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await usersCollection.deleteOne(query);
+      const filter = { _id: new ObjectId(id) };
+      const result = await usersCollection.deleteOne(filter); 
       res.send(result);
     });
 
     app.get("/reviews", async (req, res) => {
       const result = await ReviewCollection.find().toArray();
       res.send(result);
-    });  
+    });
 
     // cards collections
     app.get("/cards", async (req, res) => {
-      const email = req.query.email;
-      const query = { email: email };
-      const result = await CardCollection.find(query).toArray();
+      const email = req.filter.email;
+      const filter = { email: email };
+      const result = await CardCollection.find(filter).toArray();
       res.send(result);
     });
 
@@ -84,8 +98,8 @@ async function run() {
     });
     app.delete("/cards/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await CardCollection.deleteOne(query);
+      const filter = { _id: new ObjectId(id) };
+      const result = await CardCollection.deleteOne(filter);
       res.send(result);
     });
 
