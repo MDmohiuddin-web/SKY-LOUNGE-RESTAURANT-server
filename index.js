@@ -39,16 +39,17 @@ async function run() {
     });
 
     // make admin api
-    app.put("/users/admin/:id", async (req, res) => {
+    app.patch("/users/admin/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
-      const updateDoc = {
+      const updatedDoc = {
         $set: {
           role: "admin",
         },
-      }
-      const result = await usersCollection.updateOne(filter, updateDoc)
-      res.send(result)
+      };
+
+      const result = await usersCollection.updateOne(filter, updatedDoc);
+      res.send(result);
     });
 
     app.get("/users", async (req, res) => {
@@ -69,13 +70,12 @@ async function run() {
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
-    
 
     // users collections for delete users
     app.delete("/users/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
-      const result = await usersCollection.deleteOne(filter); 
+      const result = await usersCollection.deleteOne(filter);
       res.send(result);
     });
 
@@ -84,9 +84,19 @@ async function run() {
       res.send(result);
     });
 
+    // older version of cards collections
     // cards collections
+    // app.get("/cards", async (req, res) => {
+    //   const email = req.filter.email;
+    //   const filter = { email: email };
+    //   const result = await CardCollection.find(filter).toArray();
+    //   res.send(result);
+    // });
+
+    
+    // new version of cards collections
     app.get("/cards", async (req, res) => {
-      const email = req.filter.email;
+      const email = req.query.email; // Use req.query to access query parameters
       const filter = { email: email };
       const result = await CardCollection.find(filter).toArray();
       res.send(result);
