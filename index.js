@@ -58,18 +58,19 @@ async function run() {
       }
   
        
-    // verify token
+  
   //   //middlewares
-
+   //verify admin after verifytoken
   const verifyAdmin = async (req, res, next) => {
-      const email = req.decoded.email ;
-      const query = { email: email }
-      const user = await usersCollection.findOne(query);
-      if (user?.role !== 'admin') {
-        return res.status(403).send({ message: 'forbidden access' })
-      }
-      next()
+    const email = req.decoded.email
+    const query = { email: email }
+    const user = await usersCollection.findOne(query);
+    const isAdmin = user?.role === 'admin';
+    if (!isAdmin) {
+      return res.status(403).send({ message: 'forbidden access' })
     }
+    next()
+  }
 
   // users collections api
   app.post("/users", async (req, res) => {
@@ -104,7 +105,7 @@ async function run() {
       const user = await usersCollection.findOne(query);
       let admin = false; 
       if (user?.role === "admin") {
-        // admin = true;
+        admin = true;
       } 
       res.send({ admin });     
     });
