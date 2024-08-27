@@ -1,9 +1,10 @@
-// const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
+
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const express = require("express");
 const app = express();
+require("dotenv").config();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
-require("dotenv").config();
 const stripe=require("stripe")(process.env.STRIPE_SECRET_KEY);
 const port = process.env.PORT || 9585;
 
@@ -15,7 +16,7 @@ app.use(express.json());
 
 // DATA BASE CONNECTION CODE 
 
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.BD_PASS}@cluster0.cg8xo0z.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -233,25 +234,7 @@ async function run() {
         clientSecret: paymentIntent.client_secret   
       })
     });
-    // payments
-    app.post('/payments', async (req, res) => {
-      const payment = req.body;
-      console.log('payments info',payment);
-      const paymentResult = await paymentCollection.insertOne(payment);
-      // console.log(paymentResult);
-      
-      // const query = {
-      //   _id: {
-      //     $in: payment.cartIds.map(id => new ObjectId(id))
-      //   }
-      // };
-      
-      // const DELETE_RESULT = await CardCollection.deleteMany(query);
 
-
-      res.send(paymentResult); 
-      
-    })
 
     app.get('/payments/:email', verifyToken, async (req, res) => {
       const query = { email: req.params.email }
@@ -261,6 +244,25 @@ async function run() {
       const result = await paymentCollection.find(query).toArray();
       res.send(result);
     })
+    // payments
+    app.post('/payments', async (req, res) => {
+      const payment = req.body;
+      const paymentResult = await paymentCollection.insertOne(payment);
+
+      //  carefully delete each item from the cart
+      console.log('payment info', payment);
+      const query = {
+        _id: {
+          $in: payment.cartIds.map(id => new ObjectId(id))
+        }
+      };
+
+      const deleteResult = await CardCollection.deleteMany(query);
+      res.send({paymentResult,deleteResult}); 
+      
+    })
+
+    
  
 
     // Send a ping to confirm a successful connection
