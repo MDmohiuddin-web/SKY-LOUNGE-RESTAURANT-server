@@ -1,5 +1,4 @@
-// const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-
+// const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
 const express = require("express");
 const app = express();
 const cors = require("cors");
@@ -14,12 +13,13 @@ const port = process.env.PORT || 9585;
 app.use(cors());
 app.use(express.json());
 
-// DATA BASE CONNECTION CODE
+// DATA BASE CONNECTION CODE 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.BD_PASS}@cluster0.cg8xo0z.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
+
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -268,6 +268,22 @@ async function run() {
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
+
+
+
+
+
+
+
+    // order status
+    /**
+     * ----------------------------
+     *    NON-Efficient Way
+     * ------------------------------
+     * 1. load all the payments
+     * 2. for every menuItemIds (which is an array), go find the item from menu collection
+     * 3. for every item in the menu collection that you found from a payment entry (document)
+    */
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
