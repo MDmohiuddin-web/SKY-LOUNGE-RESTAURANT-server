@@ -235,7 +235,7 @@ async function run() {
       })
     });
 
-
+  // payments collections form data base
     app.get('/payments/:email', verifyToken, async (req, res) => {
       const query = { email: req.params.email }
       if (req.params.email !== req.decoded.email) {
@@ -244,6 +244,9 @@ async function run() {
       const result = await paymentCollection.find(query).toArray();
       res.send(result);
     })
+
+  
+   
     // payments
     app.post('/payments', async (req, res) => {
       const payment = req.body;
