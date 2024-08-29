@@ -1,21 +1,18 @@
-
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const express = require("express");
 const app = express();
 require("dotenv").config();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
-const stripe=require("stripe")(process.env.STRIPE_SECRET_KEY);
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const port = process.env.PORT || 9585;
-
 
 // middleware
 
 app.use(cors());
 app.use(express.json());
 
-// DATA BASE CONNECTION CODE 
-
+// DATA BASE CONNECTION CODE
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.BD_PASS}@cluster0.cg8xo0z.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -37,7 +34,9 @@ async function run() {
     const usersCollection = client.db("our-restaurant").collection("users");
     const ReviewCollection = client.db("our-restaurant").collection("reviews");
     const CardCollection = client.db("our-restaurant").collection("Cards");
-    const paymentCollection = client.db("our-restaurant").collection("payments");
+    const paymentCollection = client
+      .db("our-restaurant")
+      .collection("payments");
     // jwt related code
     app.post("/jwt", (req, res) => {
       const user = req.body;
@@ -111,8 +110,8 @@ async function run() {
       if (user?.role === "admin") {
         // if user is admin then set admin to true
         admin = true;
-      } 
-      res.send({ admin });  
+      }
+      res.send({ admin });
     });
     // make admin api
     app.patch(
@@ -167,23 +166,23 @@ async function run() {
     });
 
     //
-    app.patch('/menu/:id', async (req, res) => {
+    app.patch("/menu/:id", async (req, res) => {
       const item = req.body;
       const id = req.params.id;
-      const filter = { _id: (id) }
+      const filter = { _id: id };
       const updatedDoc = {
         $set: {
           name: item.name,
           category: item.category,
           price: item.price,
           recipe: item.recipe,
-          image: item.image
-        }
-      }
+          image: item.image,
+        },
+      };
 
-      const result = await MenuCollection.updateOne(filter, updatedDoc)
+      const result = await MenuCollection.updateOne(filter, updatedDoc);
       res.send(result);
-    })
+    });
 
     app.get("/reviews", async (req, res) => {
       const result = await ReviewCollection.find().toArray();
@@ -219,66 +218,82 @@ async function run() {
     });
 
     // payment intent
-    app.post('/create-payment-intent', async (req, res) => {
+    app.post("/create-payment-intent", async (req, res) => {
       const { price } = req.body;
       const amount = parseInt(price * 100);
-      console.log(amount, 'amount inside the intent')
+      console.log(amount, "amount inside the intent");
 
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
-        currency: 'usd',
-        payment_method_types: ['card']
+        currency: "usd",
+        payment_method_types: ["card"],
       });
 
       res.send({
-        clientSecret: paymentIntent.client_secret   
-      })
+        clientSecret: paymentIntent.client_secret,
+      });
     });
 
-  // payments collections form data base
-    app.get('/payments/:email', verifyToken, async (req, res) => {
-      const query = { email: req.params.email }
+    // payments collections form data base
+    app.get("/payments/:email", verifyToken, async (req, res) => {
+      const query = { email: req.params.email };
       if (req.params.email !== req.decoded.email) {
-        return res.status(403).send({ message: 'forbidden access' });
+        return res.status(403).send({ message: "forbidden access" });
       }
       const result = await paymentCollection.find(query).toArray();
       res.send(result);
-    })
+    });
 
-  
-   
     // payments
-    app.post('/payments', async (req, res) => {
+    app.post("/payments", async (req, res) => {
       const payment = req.body;
       const paymentResult = await paymentCollection.insertOne(payment);
 
       //  carefully delete each item from the cart
-      console.log('payment info', payment);
+      console.log("payment info", payment);
       const query = {
         _id: {
-          $in: payment.cartIds.map(id => new ObjectId(id))
-        }
+          $in: payment.cartIds.map((id) => new ObjectId(id)),
+        },
       };
 
       const deleteResult = await CardCollection.deleteMany(query);
-      res.send({paymentResult,deleteResult}); 
-      
-    })
+      res.send({ paymentResult, deleteResult });
+    });
+    // analytics
+    app.get("/admin-status",verifyToken,verifyAdmin, async (req, res) => {
+      const user = await usersCollection.estimatedDocumentCount();
+      const menuItems = await MenuCollection.estimatedDocumentCount();
+      const orders = await paymentCollection.estimatedDocumentCount();
 
-    
- 
+      // this is the efficient way to do it
+      // const payment = await paymentCollection.find().toArray();
+      // const revenue = payment.reduce((sum, payment) => sum + payment.price, 0);
+
+      // efficient way to do it
+      const result = await paymentCollection
+        .aggregate([
+          {
+            $group: {
+              _id: null,
+              totalRevenue: {
+                $sum: "$price",
+              },
+            },
+          },
+        ])
+        .toArray();
+
+      const revenue = result.length > 0 ? result[0].totalRevenue : 0;
+
+      res.send({ user, menuItems, orders, revenue });
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
-
-
-
-
-
-
 
     // order status
     /**
@@ -288,7 +303,12 @@ async function run() {
      * 1. load all the payments
      * 2. for every menuItemIds (which is an array), go find the item from menu collection
      * 3. for every item in the menu collection that you found from a payment entry (document)
-    */
+     */
+
+    
+
+
+
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
