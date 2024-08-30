@@ -261,7 +261,7 @@ async function run() {
       res.send({ paymentResult, deleteResult });
     });
     // analytics
-    app.get("/admin-status",verifyToken,verifyAdmin, async (req, res) => {
+    app.get("/admin-status", verifyToken, verifyAdmin, async (req, res) => {
       const user = await usersCollection.estimatedDocumentCount();
       const menuItems = await MenuCollection.estimatedDocumentCount();
       const orders = await paymentCollection.estimatedDocumentCount();
@@ -289,12 +289,6 @@ async function run() {
       res.send({ user, menuItems, orders, revenue });
     });
 
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
-
     // order status
     /**
      * ----------------------------
@@ -305,10 +299,55 @@ async function run() {
      * 3. for every item in the menu collection that you found from a payment entry (document)
      */
 
-    
+    app.get("/orders-status",verifyToken,verifyAdmin, async (req, res) => {
+      const result = await paymentCollection
+        .aggregate([
+          {
+            $unwind: "$menuItemIds",
+            // Unwind the menuItemIds array
+          },
+          {
+            $lookup: {
+              // Lookup the menu collection to get the menu item details
+              from: "menu",
+              localField: "menuItemIds",
+              foreignField: "_id",
+              as: "menuItems",
+            },
+          }, // Unwind the menuItems array
+          {
+            $unwind: "$menuItems",
+          },
+          {
+            $group: {
+              _id: "$menuItems.category",
+              quantity: {
+                $sum: 1,
+              },
+              revenue: {
+                $sum: "$menuItems.price",
+              },
 
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              category: "$_id",
+              quantity: 1,
+              revenue: 1,
+            },
+          }
+        ])
+        .toArray();
+      res.send(result);
+    });
 
-
+    // Send a ping to confirm a successful connection
+    await client.db("admin").command({ ping: 1 });
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
